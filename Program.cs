@@ -18,26 +18,27 @@ namespace MSSpeechLink
 
     internal class Program
     {
+        private const int SleepIntervalMS = 500;
         private WebSocketServer _webSocketServer;
         private List<IWebSocketConnection> _clients;
         private SpeechRecognitionEngine _speechRecognitionEngine;
         private SpeechSynthesizer _speechSynthesizer;
 
-        private void StartService(string lang = "fr-FR", int port = 8831)
+        private void StartService(string lang, string ip, int port)
         {
-            StartWebSocketServer(port);
+            StartWebSocketServer(ip, port);
             StartSpeechRecognition(lang);
             StartSpeechSynthesis(lang);
 
             while (true)
-                Thread.Sleep(100);
+                Thread.Sleep(SleepIntervalMS);
         }
 
-        private void StartWebSocketServer(int port)
+        private void StartWebSocketServer(string ip, int port)
         {
             _clients = new List<IWebSocketConnection>();
 
-            _webSocketServer = new WebSocketServer($"ws://127.0.0.1:{port}");
+            _webSocketServer = new WebSocketServer($"ws://{ip}:{port}");
             _webSocketServer.Start(socket =>
             {
                 socket.OnOpen += () =>
@@ -89,7 +90,7 @@ namespace MSSpeechLink
                 case MessageType.TextToSpeech:
                     _speechSynthesizer.SpeakAsync(data.Message);
                     break;
-                case MessageType.ChangeLang:
+                case MessageType.SelectLang:
                     ChangeCulture(data.Message);
                     break;
                 case MessageType.SelectVoice:
@@ -107,7 +108,8 @@ namespace MSSpeechLink
 
         private void StartSpeechRecognition(string lang)
         {
-            _speechRecognitionEngine = new SpeechRecognitionEngine(new System.Globalization.CultureInfo(lang));
+            var culture = new System.Globalization.CultureInfo(lang);
+            _speechRecognitionEngine = new SpeechRecognitionEngine(culture);
             _speechRecognitionEngine.LoadGrammar(new DictationGrammar());
             _speechRecognitionEngine.SpeechRecognized += OnSpeechRecognized;
             _speechRecognitionEngine.SetInputToDefaultAudioDevice();
@@ -173,8 +175,28 @@ namespace MSSpeechLink
 
         static void Main(string[] args)
         {
+            var ip = "127.0.0.1";
+            var port = 8831;
+            var lang = "en-US";
+
+            foreach (var arg in args)
+            {
+                var tmp = arg.Split('=');
+                if (tmp.Length != 2) continue;
+
+                var key = tmp[0].ToLower().Trim();
+                var value = tmp[1].ToLower().Trim();
+
+                switch (key)
+                {
+                    case "port": port = int.Parse(value); break;
+                    case "ip": ip = value; break;
+                    case "lang": lang = value; break;
+                }
+            }
+
             var p = new Program();
-            p.StartService();
+            p.StartService(lang, ip, port);
         }
     }
 }
