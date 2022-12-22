@@ -39,18 +39,7 @@ namespace MSSpeechLink
         private void OnSpeechRecognized(object sender, SpeechRecognizedEventArgs e)
         {
             Log(ServiceType.SpeechRecognition, $"Detected: {e.Result.Text}");
-
-            string json = JsonConvert.SerializeObject(new MessageData
-            {
-                MessageType = MessageType.VoiceRecognitionResult,
-                Message = e.Result.Text
-            });
-
-            foreach (Fleck.IWebSocketConnection client in _clients)
-            {
-                if (client != null && client.IsAvailable)
-                    client.Send(json);
-            }
+            SendMessage(MessageType.VoiceRecognitionResult, e.Result.Text);
         }
     }
 }

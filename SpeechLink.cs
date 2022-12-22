@@ -55,6 +55,21 @@ namespace MSSpeechLink
             Log(ServiceType.WebSocketServer, "WebSocketServer Initialized: ws://{ip}:{port}");
         }
 
+        private void SendMessage(MessageType messageType, string message)
+        {
+            var json = JsonConvert.SerializeObject(new MessageData
+            {
+                MessageType = messageType,
+                Message = message
+            });
+
+            foreach (IWebSocketConnection client in _clients)
+            {
+                if (client != null && client.IsAvailable)
+                    client.Send(json);
+            }
+        }
+
         private void OnSocketMessage(string message)
         {
             MessageData data = JsonConvert.DeserializeObject<MessageData>(message);
@@ -82,7 +97,7 @@ namespace MSSpeechLink
                     break;
 
                 case MessageType.Speak:
-                    _speechSynthesizer.SpeakAsync(data.Message);
+                    SpeakAsync(data.Message);
                     break;
                 case MessageType.SetLanguage:
                     ChangeCulture(data.Message);
