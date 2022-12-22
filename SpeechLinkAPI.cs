@@ -1,16 +1,15 @@
-﻿using System;
-
-namespace MSSpeechLink
+﻿namespace MSSpeechLink
 {
     [Serializable]
     public enum MessageType
     {
         None = 0,
-        VoiceRecognized,
-        TextToSpeech,
-        SelectLang,
-        ListVoices,
-        SelectVoice
+        VoiceRecognitionResult,
+        Speak,
+        SetLanguage,
+        GetVoices,
+        SetVoice,
+        SetVoiceByIndex
     }
 
     [Serializable]
